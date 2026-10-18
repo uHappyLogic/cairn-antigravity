@@ -15,7 +15,7 @@ review → (discuss) → answer → review → answer → … → converged → 
 
 Each pass does three jobs: **reconcile** the existing questions against what's now decided, **surface** the new gaps, and report whether the requirements have **converged**.
 
-Every write this skill makes to `open_questions.xml`, and every listing of its blocks, is a call to the plugin's open-question tool, `python3 .agents/plugins/cairn/tools/open_questions.py <subcommand> <MILESTONE_DIR> …`, written out in full on every call, never through a variable, alias, or function of your own defined to stand for the command or any part of it — the tool is that file's sole writer and owns the document's escaping and layout: a mutator prints nothing on success, `list` prints bare ids one per line, and any failure is one `Error: <reason>` line on stderr with a non-zero exit and the document left unchanged. Reading the document whole to reason over it is the one thing done directly, with the file-reading tool. Never edit `open_questions.xml` yourself.
+Every write this skill makes to `open_questions.xml`, and every listing of its blocks, is a call to the plugin's open-question tool, `python3 ~/.gemini/config/plugins/cairn/tools/open_questions.py <subcommand> <MILESTONE_DIR> …`, written out in full on every call, never through a variable, alias, or function of your own defined to stand for the command or any part of it — the tool is that file's sole writer and owns the document's escaping and layout: a mutator prints nothing on success, `list` prints bare ids one per line, and any failure is one `Error: <reason>` line on stderr with a non-zero exit and the document left unchanged. Reading the document whole to reason over it is the one thing done directly, with the file-reading tool. Never edit `open_questions.xml` yourself.
 
 ## review-milestone-requirements
 
@@ -52,7 +52,7 @@ The open questions live beside it in `<MILESTONE_DIR>/open_questions.xml` — on
 
 ### 0. Find the current milestone
 
-Follow `.agents/plugins/cairn/shared/get-current-milestone.md` to resolve `<MILESTONE_DIR>`. Never use a hardcoded path.
+Follow `~/.gemini/config/plugins/cairn/shared/get-current-milestone.md` to resolve `<MILESTONE_DIR>`. Never use a hardcoded path.
 
 ### 1. Read the documents and take inventory
 
@@ -73,10 +73,10 @@ This is the step that makes the skill loop-aware: the documents have been edited
 Each removal, on either path, is one bare call — no `--option`, since a prune or dedup records nothing:
 
 ```
-python3 .agents/plugins/cairn/tools/open_questions.py remove <MILESTONE_DIR> "<Short Title>"
+python3 ~/.gemini/config/plugins/cairn/tools/open_questions.py remove <MILESTONE_DIR> "<Short Title>"
 ```
 
-In that one write the tool deletes the block and strips every block whose embedded pick depended on it — and every block that depended on those in turn — of its `<recommendation>`, `<depends-on>`, and `<applied-principle>` children, keeping its `<alternative>` children, so no `<depends-on>` tag is left naming a removed or stripped block; a stripped block stays in the document as a live question, its alternatives intact, for the next `/recommend-all-open-questions` pass to re-pick. Stripping decides nothing, records nothing under `## Decisions`, and adds nothing to the step-5 report — the committed diff is its record.
+In that one write the tool deletes the block and strips every block whose embedded pick depended on it — and every block that depended on those in turn — of its `<recommendation>`, `<depends-on>`, and `<applied-principle>` children, keeping its `<alternative>` children, so no `<depends-on>` tag is left naming a removed or stripped block; a stripped block stays in the document as a live question, its alternatives intact, for the next `/recommend-all-open-questions` pass to re-pick. Stripping decides nothing, records nothing under `## Decisions`, and adds nothing to the step-6 report — the committed diff is its record.
 
 You **never** record a decision, fold an answer into `## Decisions`, or otherwise resolve a question here. Recording answers belongs to `/answer-open-question` alone. This step only shapes the question set to match decisions that already exist — removing settled or repeated blocks, and with them the analysis that depended on them.
 
@@ -94,7 +94,7 @@ Add only genuinely new questions — don't re-raise anything already present (yo
 Author each new finding as one `add` call, the question text as its heredoc body:
 
 ```
-python3 .agents/plugins/cairn/tools/open_questions.py add <MILESTONE_DIR> "<Short Title>" <<'EOF'
+python3 ~/.gemini/config/plugins/cairn/tools/open_questions.py add <MILESTONE_DIR> "<Short Title>" <<'EOF'
 <Question text here.>
 EOF
 ```
@@ -104,23 +104,29 @@ The tool appends the block after the existing ones and owns its shape — escapi
 - **The question text.** Because a block does not sit next to the requirement it concerns, **each question must stand on its own** — brief, self-contained, and question-shaped, fully understandable without the surrounding context, never a design proposal. And **each question asks one choice**: a gap that holds two choices becomes two questions, one per choice. The one exception is choices in one gap that constrain each other, so that not every pairing of them is viable — author those as a single multi-axis question that asks both choices at once.
 - **The Short Title** (the block's `id`): a 2–5 word phrase that uniquely identifies the question within the document (e.g. "Getting-started section order", "Glossary term scope"). It is the stable handle the question is cited by in conversation and located by in the answering and recommendation skills, which match it **case-insensitively** — so keep every Short Title unique across all blocks even ignoring case. The tool refuses an id an existing block already carries (its `Error:` line names it); pick a distinct title and call again.
 
-Do not restructure or rewrite existing content — `requirements.md` is not edited by this pass, and the question document changes only through the `remove` calls of step 2 and the `add` calls here.
+Do not restructure or rewrite existing content — `requirements.md` is not edited by this pass, and the question document changes only through the `remove` calls of step 2 and the `add` calls here and in step 4.
 
-### 4. Commit the reshaped requirements
+### 4. Check the recorded decisions against each other
 
-Read and follow the shared commit procedure at `.agents/plugins/cairn/shared/commit-procedure.md`, carrying out its steps yourself. Supply it these two inputs:
+Decisions recorded one answer at a time can come to contradict each other, and this pass is where such a pair is noticed. From your step-1 read, read the `## Decisions` entries against each other. Two entries conflict when both cannot hold as written — carrying out one breaks the other, or they fix different values for the same name, threshold, or behaviour; an entry that only refines, narrows, or extends another is no conflict.
+
+For each conflicting pair that no standing block already flags, author one block with step 3's `add` call, under step 3's rules for the question text and the Short Title: the question names the `###` heading each entry sits under in `## Decisions` (quoting enough of each to tell them apart where both share one heading), states briefly what each says, and asks which entry stands. This flags the conflict without resolving it — never edit, reword, or remove either entry, and never decide which one stands, since that is an answer's to record. The block rides in step 5's commit like any other new block, and step 6 shows it only as a Short Title in the still-open list.
+
+### 5. Commit the reshaped requirements
+
+Read and follow the shared commit procedure at `~/.gemini/config/plugins/cairn/shared/commit-procedure.md`, carrying out its steps yourself. Supply it these two inputs:
 
 - **PATHS** — this skill's own change set, the milestone's two requirements documents: `<MILESTONE_DIR>/open_questions.xml` (where every prune, dedup, and new block of this pass landed) and `<MILESTONE_DIR>/requirements.md`.
 - **SUBJECT** — `Requirements-review: <milestone_id>`.
 
 The shared procedure owns the no-op guard, the path-scoped staging, and the commit. Its dirty-own-path guard covers this skill's no-op case: a pass that reconciled, pruned, and surfaced nothing leaves both files unchanged, so nothing is staged and nothing is committed; a pass that reshaped the question set commits that reshaping.
 
-### 5. Report convergence
+### 6. Report convergence
 
 Run
 
 ```
-python3 .agents/plugins/cairn/tools/open_questions.py list <MILESTONE_DIR>
+python3 ~/.gemini/config/plugins/cairn/tools/open_questions.py list <MILESTONE_DIR>
 ```
 
 It prints the Short Title of every `<open-question>` block still in the document, one per line in document order; empty output is a converged document. That print — not your recollection of the pass — is what the two items below are read from.
@@ -134,4 +140,4 @@ Follow that terse line with only the two pieces of decision-critical state git n
   - If `list` printed anything → the requirements are **not** ready; the next loop step is to answer them, then re-run this skill.
   - If it printed nothing → say explicitly that the requirements look **ready for `/derive-tasks`**.
 
-**No-op pass.** When the step-4 dirty-own-path guard fires — this pass reconciled, pruned, and surfaced nothing, so both files are unchanged and nothing was committed — do **not** print `Requirements reviewed.` Instead print a single distinct line stating that nothing changed and briefly why (e.g. "No changes — the question set already matched the recorded decisions and no new gaps surfaced."). Still report the still-open list and convergence verdict above, since that state is unchanged but the user still needs it to decide the next loop step.
+**No-op pass.** When the step-5 dirty-own-path guard fires — this pass reconciled, pruned, and surfaced nothing, so both files are unchanged and nothing was committed — do **not** print `Requirements reviewed.` Instead print a single distinct line stating that nothing changed and briefly why (e.g. "No changes — the question set already matched the recorded decisions and no new gaps surfaced."). Still report the still-open list and convergence verdict above, since that state is unchanged but the user still needs it to decide the next loop step.

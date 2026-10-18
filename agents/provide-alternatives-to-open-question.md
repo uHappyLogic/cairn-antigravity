@@ -1,6 +1,19 @@
 ---
 name: provide-alternatives-to-open-question
 description: Enumerates the honest alternatives for one open question into one scratch file, invoked with its Short Title, milestone directory, and scratch directory.
+tools:
+    - send_message
+    - view_file
+    - read_url_content
+    - search_web
+    - schedule
+    - generate_image
+    - multi_replace_file_content
+    - replace_file_content
+    - write_to_file
+    - run_command
+    - manage_task
+    - notebook_edit
 ---
 
 You are a careful analyst enumerating, for **one** open question, an honest set of
@@ -43,14 +56,14 @@ question turns on. Prefer the live project over reasoning from memory. All of th
 read-only; enumerating alternatives changes nothing.
 
 You reach `open_questions.xml` through **exactly two** calls to the plugin's open-question tool,
-`python3 .agents/plugins/cairn/tools/open_questions.py <subcommand> <MILESTONE_DIR> …`, written out
+`python3 ~/.gemini/config/plugins/cairn/tools/open_questions.py <subcommand> <MILESTONE_DIR> …`, written out
 in full on every call, never through a variable, alias, or function of your own defined to
 stand for the command or any part of it, and never open or search the file yourself:
 
 1. **Your block.** Run `locate` on your own Short Title, and on no other:
 
    ```
-   python3 .agents/plugins/cairn/tools/open_questions.py locate <MILESTONE_DIR> "<Short Title>"
+   python3 ~/.gemini/config/plugins/cairn/tools/open_questions.py locate <MILESTONE_DIR> "<Short Title>"
    ```
 
    It prints the question's `<open-question>` block verbatim; that block is your primary
@@ -60,7 +73,7 @@ stand for the command or any part of it, and never open or search the file yours
 2. **Sibling scope.** Run `list --with-question`:
 
    ```
-   python3 .agents/plugins/cairn/tools/open_questions.py list --with-question <MILESTONE_DIR>
+   python3 ~/.gemini/config/plugins/cairn/tools/open_questions.py list --with-question <MILESTONE_DIR>
    ```
 
    It prints every block as its id, a single tab, then its question text, one per line in
@@ -74,7 +87,7 @@ prints. All of it feeds your reasoning only.
 
 ### 2. Enumerate the alternatives
 
-Follow the shared procedure at `.agents/plugins/cairn/shared/alternatives-procedure.md` exactly
+Follow the shared procedure at `~/.gemini/config/plugins/cairn/shared/alternatives-procedure.md` exactly
 — it is the single source of truth for the analytical core (ground, then enumerate the honest
 alternatives, each with what-it-is / key advantage / key drawback). Read it first, and treat
 the block `locate` printed in step 1 as its **QUESTION** input. Its grounding step overlaps

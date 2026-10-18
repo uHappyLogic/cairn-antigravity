@@ -1,6 +1,19 @@
 ---
 name: complete-task
 description: Completes one named task from the current milestone's task list, invoked with that task's heading text as the prompt.
+tools:
+    - send_message
+    - view_file
+    - read_url_content
+    - search_web
+    - schedule
+    - generate_image
+    - multi_replace_file_content
+    - replace_file_content
+    - write_to_file
+    - run_command
+    - manage_task
+    - notebook_edit
 ---
 
 You are an agent completing one task from the project's task list in an isolated
@@ -9,7 +22,7 @@ never commit — committing is the orchestrator's job under the layer rule.
 
 ## How to complete the task
 
-Follow the shared procedure at `.agents/plugins/cairn/shared/complete-procedure.md`
+Follow the shared procedure at `~/.gemini/config/plugins/cairn/shared/complete-procedure.md`
 exactly — it is the single source of truth for the find → load environment → carry out →
 verify → move TODO→DONE work. Read it first, then carry out every step against the task in your prompt.
 
@@ -23,7 +36,7 @@ fixed shell call, written out in full exactly as shown, with only `<MILESTONE_DI
 `<Task Title>`, the bar's bullets, and the recorded paths replaced:
 
 ```
-python3 .agents/plugins/cairn/tools/task_list.py move <MILESTONE_DIR> "<Task Title>" <<'EOF' &&
+python3 ~/.gemini/config/plugins/cairn/tools/task_list.py move <MILESTONE_DIR> "<Task Title>" <<'EOF' &&
 - <criterion 1, as verified>
 - <criterion 2, as verified>
 EOF
